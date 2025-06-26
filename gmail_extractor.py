@@ -1,12 +1,12 @@
 import os
 import re
 import base64
+import json
 import pandas as pd
 from bs4 import BeautifulSoup
 from datetime import datetime
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from supabase import create_client, Client
 
@@ -39,16 +39,13 @@ IGNORE_EMAILS = {
 # --- AUTH ---
 def authenticate_gmail():
     creds = None
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
+    creds_json = os.getenv("GMAIL_CREDENTIALS_JSON")
+    if not creds_json:
+        raise Exception("Missing GMAIL_CREDENTIALS_JSON environment variable")
+
+    creds_data = json.loads(creds_json)
+    creds = Credentials.from_authorized_user_info(creds_data["installed"], SCOPES)
+
     return build('gmail', 'v1', credentials=creds)
 
 # --- FETCH ---
@@ -179,7 +176,7 @@ def extract_and_sync(service):
             'state': state,
             'location': city,
             'date': date_str,
-            'message': body_text[:500],  # optional: truncate long messages
+            'message': body_text[:500],
             'source_url': listing_url,
             'message_id': msg['id']
         })
