@@ -114,6 +114,9 @@ def get_body_text(payload):
                 pass
     return ''
 
+def clean(val):
+    return val.strip().replace('\n', '').replace('\r', '') if isinstance(val, str) else val
+
 # --- SYNC ---
 def sync_to_supabase(records):
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -183,15 +186,11 @@ def extract_and_sync(service):
             continue
 
         # Sanitize all extracted values
-def clean(val):
-    return val.strip().replace('\n', '').replace('\r', '') if isinstance(val, str) else val
-
-email = clean(email)
-name = clean(name)
-phone = clean(phone)
-listing_url = clean(listing_url)
-body_text = clean(body_text)
-
+        email = clean(email)
+        name = clean(name)
+        phone = clean(phone)
+        listing_url = clean(listing_url)
+        body_text = clean(body_text)
 
         leads.append({
             'email': email,
