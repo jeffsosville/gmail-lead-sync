@@ -40,7 +40,9 @@ IGNORE_EMAILS = {
 # --- CLEANER ---
 def clean(val):
     if isinstance(val, str):
-        val = val.strip().replace('\r', '').replace('\n', '')
+        # Replace all whitespace characters (including newlines, tabs, etc.) with a single space
+        val = re.sub(r'\s+', ' ', val).strip()
+        # Ensure only printable ASCII characters remain
         val = ''.join(ch for ch in val if ch in string.printable)
         return val
     return val
@@ -188,7 +190,7 @@ def extract_and_sync(service):
         state = area_info['state']
         city = area_info['location']
 
-        # Sanitize all extracted values
+        # Sanitize all extracted values using the improved clean function
         email = clean(email)
         name = clean(name)
         phone = clean(phone)
