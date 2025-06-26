@@ -1,22 +1,22 @@
 import os
 import re
-import base64
 import json
+import base64
 import pandas as pd
 from bs4 import BeautifulSoup
 from datetime import datetime
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from supabase import create_client, Client
 
 # --- SETTINGS ---
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
-FETCH_LIMIT = 200
-
+FETCH_LIMIT = 10
+TABLE_NAME = "master_contacts"
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-TABLE_NAME = "master_contacts"
 
 # --- REGEX ---
 EMAIL_REGEX = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
@@ -38,18 +38,27 @@ IGNORE_EMAILS = {
 
 # --- AUTH ---
 def authenticate_gmail():
-    creds_json = os.getenv("GMAIL_CREDENTIALS_JSON")
-    token_json = os.getenv("GMAIL_TOKEN_JSON")
+    creds = None
+    creds_env = os.getenv("GMAIL_CREDENTIALS_JSON")
+    token_env = os.getenv("GMAIL_TOKEN_JSON")
 
-    if not creds_json:
-        raise Exception("Missing GMAIL_CREDENTIALS_JSON environment variable")
-    if not token_json:
-        raise Exception("Missing GMAIL_TOKEN_JSON environment variable")
+    if creds_env and token_env:
+        print("🔐 Using GitHub Secrets for authentication")
+        token_info = json.loads(token_env)
+        creds = Credentials.from_authorized_user_info(token_info, SCOPES)
+    else:
+        print("🔐 Using local credentials.json/token.json")
+        if os.path.exists('token.json'):
+            creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+                creds = flow.run_local_server(port=0)
+            with open('token.json', 'w') as token:
+                token.write(creds.to_json())
 
-    creds_info = json.loads(creds_json)
-    token_info = json.loads(token_json)
-
-    creds = Credentials.from_authorized_user_info(token_info, SCOPES)
     return build('gmail', 'v1', credentials=creds)
 
 # --- FETCH ---
