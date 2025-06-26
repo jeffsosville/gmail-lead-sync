@@ -182,6 +182,17 @@ def extract_and_sync(service):
         if not email:
             continue
 
+        # Sanitize all extracted values
+def clean(val):
+    return val.strip().replace('\n', '').replace('\r', '') if isinstance(val, str) else val
+
+email = clean(email)
+name = clean(name)
+phone = clean(phone)
+listing_url = clean(listing_url)
+body_text = clean(body_text)
+
+
         leads.append({
             'email': email,
             'name': name,
