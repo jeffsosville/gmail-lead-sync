@@ -1,0 +1,6 @@
+# Ignore sensitive and local files
+*.csv
+token.json
+token_info_backup.json
+credentials.json
+__pycache__/
