@@ -3,7 +3,7 @@ name: Daily Gmail Extract + Supabase Sync
 on:
   schedule:
     - cron: '0 12 * * *'  # Runs daily at 8am ET
-  workflow_dispatch:      # Enables manual trigger from GitHub
+  workflow_dispatch:       # Enables manual run from GitHub UI
 
 jobs:
   run-extractor:
