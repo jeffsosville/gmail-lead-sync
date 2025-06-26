@@ -1,1 +1,35 @@
+name: Daily Gmail Extract + Supabase Sync
+
+on:
+  schedule:
+    - cron: '0 12 * * *'  # Runs daily at 8am ET
+  workflow_dispatch:
+
+jobs:
+  run-extractor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Gmail Extractor
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GMAIL_CREDENTIALS_JSON: ${{ secrets.GMAIL_CREDENTIALS_JSON }}
+          GMAIL_TOKEN_JSON: ${{ secrets.GMAIL_TOKEN_JSON }}
+        run: |
+          echo "$GMAIL_CREDENTIALS_JSON" > credentials.json
+          echo "$GMAIL_TOKEN_JSON" > token.json
+          python gmail_extractor.py
 
