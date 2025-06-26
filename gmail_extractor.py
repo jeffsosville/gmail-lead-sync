@@ -1,21 +1,20 @@
 import os
 import re
-import base64
 import json
+import base64
 import pandas as pd
 from bs4 import BeautifulSoup
 from datetime import datetime
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
 from supabase import create_client, Client
+from googleapiclient.discovery import build
 
 # --- SETTINGS ---
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 FETCH_LIMIT = 200
-
-SUPABASE_URL = "https://jrplwchamgzjmjmmkpoj.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpycGx3Y2hhbWd6am1qbW1rcG9qIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDYwMTgzOSwiZXhwIjoyMDY2MTc3ODM5fQ.jWQMWrd1TAqmfT9vKqKzNdapdFblxW_t5Yp25E3LyZ0"
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 TABLE_NAME = "master_contacts"
 
 # --- REGEX ---
@@ -29,7 +28,7 @@ area_df = pd.read_csv("area_codes.csv")
 area_df['areacodenumber'] = area_df['areacodenumber'].astype(str).str.zfill(3)
 area_code_map = area_df.set_index('areacodenumber')[['state', 'location']].to_dict(orient='index')
 
-# --- IGNORE INTERNAL EMAILS ---
+# --- IGNORE EMAILS ---
 IGNORE_EMAILS = {
     "info@atmbrokerage.com", "info@connectatm.com",
     "interest@bizbuysell.com", "docs@email.pandadoc.net",
@@ -38,14 +37,12 @@ IGNORE_EMAILS = {
 
 # --- AUTH ---
 def authenticate_gmail():
-    creds = None
     creds_json = os.getenv("GMAIL_CREDENTIALS_JSON")
-    if not creds_json:
-        raise Exception("Missing GMAIL_CREDENTIALS_JSON environment variable")
-
-    creds_data = json.loads(creds_json)
-    creds = Credentials.from_authorized_user_info(creds_data["installed"], SCOPES)
-
+    token_json = os.getenv("GMAIL_TOKEN_JSON")
+    if not creds_json or not token_json:
+        raise Exception("Missing Gmail credentials in secrets")
+    creds_data = json.loads(token_json)
+    creds = Credentials.from_authorized_user_info(info=creds_data, scopes=SCOPES)
     return build('gmail', 'v1', credentials=creds)
 
 # --- FETCH ---
