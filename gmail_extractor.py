@@ -2,6 +2,7 @@ import os
 import re
 import json
 import base64
+import string
 import pandas as pd
 from bs4 import BeautifulSoup
 from datetime import datetime
@@ -35,6 +36,14 @@ IGNORE_EMAILS = {
     "interest@bizbuysell.com", "docs@email.pandadoc.net",
     "noreply@gohighlevel.com", "welcome@supabase.com"
 }
+
+# --- CLEANER ---
+def clean(val):
+    if isinstance(val, str):
+        val = val.strip().replace('\r', '').replace('\n', '')
+        val = ''.join(ch for ch in val if ch in string.printable)
+        return val
+    return val
 
 # --- AUTH ---
 def authenticate_gmail():
@@ -114,9 +123,6 @@ def get_body_text(payload):
                 pass
     return ''
 
-def clean(val):
-    return val.strip().replace('\n', '').replace('\r', '') if isinstance(val, str) else val
-
 # --- SYNC ---
 def sync_to_supabase(records):
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -182,15 +188,15 @@ def extract_and_sync(service):
         state = area_info['state']
         city = area_info['location']
 
-        if not email:
-            continue
-
         # Sanitize all extracted values
         email = clean(email)
         name = clean(name)
         phone = clean(phone)
         listing_url = clean(listing_url)
         body_text = clean(body_text)
+
+        if not email:
+            continue
 
         leads.append({
             'email': email,
@@ -200,7 +206,7 @@ def extract_and_sync(service):
             'location': city,
             'date': date_str,
             'message': body_text[:500],
-            'source_url': listing_url.strip().replace('\n', '').replace('\r', '') if listing_url else None,
+            'source_url': listing_url,
             'message_id': msg['id']
         })
 
