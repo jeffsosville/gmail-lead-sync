@@ -13,7 +13,7 @@ from supabase import create_client, Client
 
 # --- SETTINGS ---
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
-FETCH_LIMIT = 100
+FETCH_LIMIT = 200
 TABLE_NAME = "master_contacts"
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
