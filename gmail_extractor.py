@@ -206,7 +206,7 @@ def extract_and_sync(service):
             'location': city,
             'date': date_str,
             'message': body_text[:500],
-            'source_url': listing_url,
+            'source_url': clean(listing_url) if listing_url else None,
             'message_id': msg['id']
         })
 
