@@ -1,20 +1,21 @@
 import os
 import re
-import json
 import base64
+import json
 import pandas as pd
 from bs4 import BeautifulSoup
 from datetime import datetime
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from supabase import create_client, Client
 from googleapiclient.discovery import build
+from supabase import create_client, Client
 
 # --- SETTINGS ---
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 FETCH_LIMIT = 200
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 TABLE_NAME = "master_contacts"
 
 # --- REGEX ---
@@ -28,7 +29,7 @@ area_df = pd.read_csv("area_codes.csv")
 area_df['areacodenumber'] = area_df['areacodenumber'].astype(str).str.zfill(3)
 area_code_map = area_df.set_index('areacodenumber')[['state', 'location']].to_dict(orient='index')
 
-# --- IGNORE EMAILS ---
+# --- IGNORE INTERNAL EMAILS ---
 IGNORE_EMAILS = {
     "info@atmbrokerage.com", "info@connectatm.com",
     "interest@bizbuysell.com", "docs@email.pandadoc.net",
@@ -39,10 +40,16 @@ IGNORE_EMAILS = {
 def authenticate_gmail():
     creds_json = os.getenv("GMAIL_CREDENTIALS_JSON")
     token_json = os.getenv("GMAIL_TOKEN_JSON")
-    if not creds_json or not token_json:
-        raise Exception("Missing Gmail credentials in secrets")
-    creds_data = json.loads(token_json)
-    creds = Credentials.from_authorized_user_info(info=creds_data, scopes=SCOPES)
+
+    if not creds_json:
+        raise Exception("Missing GMAIL_CREDENTIALS_JSON environment variable")
+    if not token_json:
+        raise Exception("Missing GMAIL_TOKEN_JSON environment variable")
+
+    creds_info = json.loads(creds_json)
+    token_info = json.loads(token_json)
+
+    creds = Credentials.from_authorized_user_info(token_info, SCOPES)
     return build('gmail', 'v1', credentials=creds)
 
 # --- FETCH ---
