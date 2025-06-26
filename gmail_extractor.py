@@ -38,12 +38,26 @@ IGNORE_EMAILS = {
 }
 
 # --- CLEANER ---
+import re # Make sure re is imported
+import string # Make sure string is imported
+
+# --- CLEANER ---
 def clean(val):
     if isinstance(val, str):
-        # Replace all whitespace characters (including newlines, tabs, etc.) with a single space
-        val = re.sub(r'\s+', ' ', val).strip()
-        # Ensure only printable ASCII characters remain
+        # Step 1: Explicitly remove ALL newline (\n) and carriage return (\r) characters first.
+        # This is crucial because string.printable includes them.
+        val = val.replace('\n', '').replace('\r', '')
+        
+        # Step 2: Replace any remaining sequences of whitespace (like tabs or multiple spaces) with a single space
+        val = re.sub(r'\s+', ' ', val)
+        
+        # Step 3: Trim leading/trailing spaces that might have resulted from previous operations
+        val = val.strip()
+
+        # Step 4: Filter out any other non-printable ASCII characters.
+        # After steps 1-3, this mainly serves as a general safeguard.
         val = ''.join(ch for ch in val if ch in string.printable)
+        
         return val
     return val
 
